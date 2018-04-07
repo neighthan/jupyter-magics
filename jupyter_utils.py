@@ -65,7 +65,7 @@ def get_nb_imports(nb_name: str) -> dict:
     return {imported_names[i]: import_lines[i] for i in range(len(imported_names))}
 
 
-def write_funcs_to_file(fname: str, funcs: List[Callable], local_vars: Optional[Dict[str, Any]]) -> None:
+def write_funcs_to_file(fname: str, funcs: List[Callable], local_vars: Optional[Dict[str, Any]]=None) -> None:
     """
     Write the source for `funcs` in a file at `fname`, including imports.
     A best-effort attempt is made at including any imports needed for your functions to run; there
