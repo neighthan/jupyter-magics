@@ -63,3 +63,73 @@ def get_nb_imports(nb_name: str) -> dict:
             imported_names.append(tuple(word.replace(',', '') for word in words[words.index('import') + 1:]))
 
     return {imported_names[i]: import_lines[i] for i in range(len(imported_names))}
+
+
+def write_funcs_to_file(fname: str, funcs: List[Callable], local_vars: Optional[Dict[str, Any]]) -> None:
+    """
+    Write the source for `funcs` in a file at `fname`, including imports.
+    A best-effort attempt is made at including any imports needed for your functions to run; there
+    are several caveats to this (see `get_nb_imports` for more information).
+    :param fname: path to the file to write the functions in
+    :param funcs: a list of functions whose source code should be written in the file at fname
+    :param local_vars: just set local_vars=locals() if using this.
+      If provided, a check is done for each local function (unless it's imported)
+      to determine if one of the functions in `funcs` calls it; if so, an AssertionError is raised.
+      You can add these functions to `funcs` or set `local_vars` to `None` to ignore this.
+      Note that this is a best-effort check and may not catch all cases or may raise errors when
+      there are no problems.
+    """
+
+    imports_needed = set()
+    source = []
+    imports = get_nb_imports(get_notebook_name())
+
+    for func in funcs:
+        source_lines = inspect.getsourcelines(func)[0]
+
+        for import_names in imports:
+            for import_name in import_names:
+                for line in source_lines:
+                    if import_name not in line:
+                        continue
+
+                    # we have to be a little careful here; some short import
+                    # names like np or pd may show up by chance in another word,
+                    # so we don't just want to check that the name occurs _anywhere_
+                    # these checks should help, though there will still be
+                    # errors possible
+
+                    function_call = f"{import_name}("
+                    module_use = f"{import_name}."
+                    if function_call in line or module_use in line or len(import_name) > 3:
+                        imports_needed.add(imports[import_names] + '\n')
+
+        source.extend(source_lines)
+        source.extend(['\n'] * 2)
+
+    if local_vars:
+        local_funcs_needed = set()
+        local_funcs = {name: var for name, var in local_vars.items() if type(var) == type(lambda x: x)}
+
+        for local_func in local_funcs:
+
+            func_imported = False
+
+            for import_names in imports:
+                if local_func in import_names:
+                    func_imported = True
+
+            if func_imported or local_func in [func.__name__ for func in funcs]:
+                continue
+
+            for line in source:
+                if f"{local_func}(" in line:
+                    local_funcs_needed.add(local_func)
+
+        if local_funcs_needed:
+            assert False, f"Add the following local functions to `funcs` or set `local_vars` to `None`: {local_funcs_needed}"
+
+    with open(fname, 'w') as f:
+        f.writelines(sorted(imports_needed))
+        f.write('\n')
+        f.writelines(source)
