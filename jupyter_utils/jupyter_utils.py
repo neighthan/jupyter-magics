@@ -11,14 +11,18 @@ import inspect
 
 def get_notebook_name():
     """Return the full path of the jupyter notebook."""
-    kernel_id = re.search('kernel-(.*).json', ipykernel.connect.get_connection_file()).group(1)
+    kernel_id = re.search(
+        "kernel-(.*).json", ipykernel.connect.get_connection_file()
+    ).group(1)
     servers = list_running_servers()
     for ss in servers:
-        response = requests.get(urljoin(ss['url'], 'api/sessions'), params={'token': ss.get('token', '')})
+        response = requests.get(
+            urljoin(ss["url"], "api/sessions"), params={"token": ss.get("token", "")}
+        )
         for nn in json.loads(response.text):
-            if nn['kernel']['id'] == kernel_id:
-                relative_path = nn['notebook']['path']
-                return os.path.join(ss['notebook_dir'], relative_path)
+            if nn["kernel"]["id"] == kernel_id:
+                relative_path = nn["notebook"]["path"]
+                return os.path.join(ss["notebook_dir"], relative_path)
 
 
 def get_nb_imports(nb_name: str) -> dict:
@@ -35,37 +39,43 @@ def get_nb_imports(nb_name: str) -> dict:
     """
 
     with open(nb_name) as f:
-        cells = json.loads(f.read())['cells']
+        cells = json.loads(f.read())["cells"]
 
     import_lines = []
     for cell in cells:
-        if cell['cell_type'] != 'code':
+        if cell["cell_type"] != "code":
             continue
-        source = cell['source']
+        source = cell["source"]
         assert type(source) == list
         for line in source:
             line = line.strip()
 
-            if line.startswith('#'):
+            if line.startswith("#"):
                 continue
 
-            words = line.split(' ')
+            words = line.split(" ")
 
-            if words[0] == 'import' or (words[0] == 'from' and words[2] == 'import'):
+            if words[0] == "import" or (words[0] == "from" and words[2] == "import"):
                 import_lines.append(line)
 
     imported_names = []
     for line in import_lines:
-        words = line.split(' ')
-        if words[0] == 'import':  # ex import time or import numpy as np
+        words = line.split(" ")
+        if words[0] == "import":  # ex import time or import numpy as np
             imported_names.append((words[-1],))
         else:  # ex from sklearn.metrics import roc_auc_score, roc_curve
-            imported_names.append(tuple(word.replace(',', '') for word in words[words.index('import') + 1:]))
+            imported_names.append(
+                tuple(
+                    word.replace(",", "") for word in words[words.index("import") + 1 :]
+                )
+            )
 
     return {imported_names[i]: import_lines[i] for i in range(len(imported_names))}
 
 
-def write_funcs_to_file(fname: str, funcs: List[Callable], local_vars: Optional[Dict[str, Any]]=None) -> None:
+def write_funcs_to_file(
+    fname: str, funcs: List[Callable], local_vars: Optional[Dict[str, Any]] = None
+) -> None:
     """
     Write the source for `funcs` in a file at `fname`, including imports.
     A best-effort attempt is made at including any imports needed for your functions to run; there
@@ -101,15 +111,23 @@ def write_funcs_to_file(fname: str, funcs: List[Callable], local_vars: Optional[
 
                     function_call = f"{import_name}("
                     module_use = f"{import_name}."
-                    if function_call in line or module_use in line or len(import_name) > 3:
-                        imports_needed.add(imports[import_names] + '\n')
+                    if (
+                        function_call in line
+                        or module_use in line
+                        or len(import_name) > 3
+                    ):
+                        imports_needed.add(imports[import_names] + "\n")
 
         source.extend(source_lines)
-        source.extend(['\n'] * 2)
+        source.extend(["\n"] * 2)
 
     if local_vars:
         local_funcs_needed = set()
-        local_funcs = {name: var for name, var in local_vars.items() if type(var) == type(lambda x: x)}
+        local_funcs = {
+            name: var
+            for name, var in local_vars.items()
+            if type(var) == type(lambda x: x)
+        }
 
         for local_func in local_funcs:
 
@@ -127,9 +145,11 @@ def write_funcs_to_file(fname: str, funcs: List[Callable], local_vars: Optional[
                     local_funcs_needed.add(local_func)
 
         if local_funcs_needed:
-            assert False, f"Add the following local functions to `funcs` or set `local_vars` to `None`: {local_funcs_needed}"
+            assert (
+                False
+            ), f"Add the following local functions to `funcs` or set `local_vars` to `None`: {local_funcs_needed}"
 
-    with open(fname, 'w') as f:
+    with open(fname, "w") as f:
         f.writelines(sorted(imports_needed))
-        f.write('\n')
+        f.write("\n")
         f.writelines(source)

@@ -31,11 +31,13 @@ from IPython.core.magic import line_cell_magic, Magics, magics_class
 from IPython import get_ipython
 from typing import Optional
 
+
 class _InvisibleAudio(Audio):
     """
     An invisible (`display: none`) `Audio` element which removes itself when finished playing.
     Taken from https://stackoverflow.com/a/50648266.
     """
+
     def _repr_html_(self) -> str:
         audio = super()._repr_html_()
         audio = audio.replace(
@@ -51,7 +53,7 @@ class NotificationMagics(Magics):
     """
 
     @line_cell_magic
-    def notify(self, line: str, cell: Optional[str]=None):
+    def notify(self, line: str, cell: Optional[str] = None):
         splits = line.strip().split(" ")
         if splits[0] in ("-u", "--url"):
             url = splits[1]

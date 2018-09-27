@@ -14,6 +14,7 @@ from typing import Optional
 from time import sleep
 from jupyter_utils import get_notebook_name
 
+
 @register_cell_magic
 def background(line: str, cell: str):
     nb_fname = get_notebook_name()
@@ -37,7 +38,10 @@ def background(line: str, cell: str):
                 continue
 
         # skip line magics
-        code += "".join([line for line in cell["source"] if not line.startswith("%")]) + "\n"
+        code += (
+            "".join([line for line in cell["source"] if not line.startswith("%")])
+            + "\n"
+        )
         if terminate:
             break
 
@@ -47,4 +51,5 @@ def background(line: str, cell: str):
         tmp.seek(0)  # running cat didn't show anything unless I did this
 
         Popen(["python", tmp.name])
-        sleep(0.5)  # otherwise, it seems like the file is deleted before Popen even gets to it
+        # otherwise, it seems like the file is deleted before Popen even gets to it
+        sleep(0.5)
