@@ -28,6 +28,7 @@ To always play your preferred audio file, just change the default below.
 
 from IPython.display import Audio, display
 from IPython.core.magic import line_cell_magic, Magics, magics_class
+from IPython.core.magic_arguments import argument, magic_arguments, parse_argstring
 from IPython import get_ipython
 from typing import Optional
 
@@ -52,21 +53,26 @@ class NotificationMagics(Magics):
     Inspired by https://stackoverflow.com/a/50648266.
     """
 
+    @magic_arguments()
+    @argument(
+        "-u",
+        "--url",
+        default="https://freewavesamples.com/files/E-Mu-Proteus-FX-CosmoBel-C3.wav",
+        help="URL of audio file to play.",
+    )
+    @argument(
+        "line_code",
+        nargs="*",
+        help="Other code on the line will be executed, unless this is called as a cell magic.",
+    )
     @line_cell_magic
     def notify(self, line: str, cell: Optional[str] = None):
-        splits = line.strip().split(" ")
-        if splits[0] in ("-u", "--url"):
-            url = splits[1]
-            line = " ".join(splits[2:])
-        else:
-            url = "https://freewavesamples.com/files/E-Mu-Proteus-FX-CosmoBel-C3.wav"
+        args = parse_argstring(self.notify, line)
 
-        if cell:
-            ret = self.shell.ex(cell)
-        else:
-            ret = self.shell.ex(line)
+        code = cell if cell else " ".join(args.line_code)
+        ret = self.shell.ex(code)
 
-        audio = _InvisibleAudio(url=url, autoplay=True)
+        audio = _InvisibleAudio(url=args.url, autoplay=True)
         display(audio)
 
         return ret
