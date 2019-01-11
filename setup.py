@@ -27,7 +27,7 @@ install_dir = os.path.expanduser(install_dir)
 install_path = os.path.join(install_dir, "ipy_cell_completion_bell.py")
 
 current_dir = os.path.realpath(os.path.dirname(__file__))
-source_path = os.path.join(current_dir, "jupyter-utils", "ipy_cell_completion_bell.py")
+source_path = os.path.join(current_dir, "jupyter_utils", "ipy_cell_completion_bell.py")
 
 try:
     shutil.copy(source_path, install_path)
