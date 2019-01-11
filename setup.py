@@ -32,3 +32,6 @@ if os.path.exists(install_path):
     should_copy = input(f"Copy %notify magic to {install_path}? (y/n) ")
     if should_copy:
         shutil.copy(source_path, install_path)
+else:
+    print(f"Install path for %notify magic not found at {install_path}.")
+    print(f"Copy {current_path} to your startup folder manually.")
