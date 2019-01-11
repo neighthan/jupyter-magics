@@ -22,16 +22,17 @@ setuptools.setup(
     ],
 )
 
-install_path = os.path.join("~", ".ipython", "profile_default", "startup", "ipy_cell_completion_bell.py")
-install_path = os.path.expanduser(install_path)
+install_dir = os.path.join("~", ".ipython", "profile_default", "startup")
+install_dir = os.path.expanduser(install_dir)
+install_path = os.path.join(install_dir, "ipy_cell_completion_bell.py")
 
 current_dir = os.path.realpath(os.path.dirname(__file__))
 source_path = os.path.join(current_dir, "jupyter-utils", "ipy_cell_completion_bell.py")
 
-if os.path.exists(install_path):
+if os.path.exists(install_dir):
     should_copy = input(f"Copy %notify magic to {install_path}? (y/n) ")
     if should_copy:
         shutil.copy(source_path, install_path)
 else:
-    print(f"Install path for %notify magic not found at {install_path}.")
+    print(f"Install directory for %notify magic not found at {install_dir}.")
     print(f"Copy {source_path} to your startup folder manually.")
