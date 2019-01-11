@@ -1,4 +1,6 @@
 import setuptools
+import os
+import shutil
 
 with open("README.md", "r") as f:
     long_description = f.read()
@@ -14,8 +16,19 @@ setuptools.setup(
     url="https://github.com/neighthan/jupyter-utils",
     packages=setuptools.find_packages(),
     classifiers=[
-        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
 )
+
+install_path = os.path.join("~", ".ipython", "profile_default", "startup", "ipy_cell_completion_bell.py")
+install_path = os.path.expanduser(default_path)
+
+current_dir = os.path.realpath(os.path.dirname(__file__))
+source_path = os.path.join(current_dir, "jupyter-utils", "ipy_cell_completion_bell.py")
+
+if os.path.exists(install_path):
+    should_copy = input(f"Copy %notify magic to {install_path}? (y/n) ")
+    if should_copy:
+        shutil.copy(source_path, default_path)
