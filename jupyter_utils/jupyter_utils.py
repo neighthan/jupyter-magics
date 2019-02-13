@@ -10,19 +10,23 @@ import inspect
 
 
 def get_notebook_name():
-    """Return the full path of the jupyter notebook."""
+    """
+    Return the full path of the jupyter notebook.
+    
+    From https://github.com/jupyter/notebook/issues/1000#issuecomment-359875246.
+    """
     kernel_id = re.search(
         "kernel-(.*).json", ipykernel.connect.get_connection_file()
     ).group(1)
     servers = list_running_servers()
-    for ss in servers:
+    for server in servers:
         response = requests.get(
-            urljoin(ss["url"], "api/sessions"), params={"token": ss.get("token", "")}
+            urljoin(server["url"], "api/sessions"), params={"token": server.get("token", "")}
         )
-        for nn in json.loads(response.text):
-            if nn["kernel"]["id"] == kernel_id:
-                relative_path = nn["notebook"]["path"]
-                return os.path.join(ss["notebook_dir"], relative_path)
+        for notebook in json.loads(response.text):
+            if notebook["kernel"]["id"] == kernel_id:
+                relative_path = notebook["notebook"]["path"]
+                return os.path.join(server["notebook_dir"], relative_path)
 
 
 def get_nb_imports(nb_name: str) -> dict:
