@@ -70,10 +70,11 @@ class NotificationMagics(Magics):
         args = parse_argstring(self.notify, line)
 
         code = cell if cell else " ".join(args.line_code)
-        ret = self.shell.ex(code)
-
-        audio = _InvisibleAudio(url=args.url, autoplay=True)
-        display(audio)
+        try:
+            ret = self.shell.ex(code)
+        finally:
+            audio = _InvisibleAudio(url=args.url, autoplay=True)
+            display(audio)
 
         return ret
 
