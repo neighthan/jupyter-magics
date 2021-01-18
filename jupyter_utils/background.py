@@ -12,7 +12,7 @@ from time import sleep
 
 from IPython.core.magic import register_cell_magic
 
-from .jupyter_utils import get_notebook_path
+from jupyter_utils.jupyter_utils import get_notebook_path
 
 
 @register_cell_magic
