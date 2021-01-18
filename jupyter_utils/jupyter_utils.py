@@ -1,19 +1,22 @@
+import inspect
 import json
 import os.path
 import re
+from typing import Any, Callable, Dict, List, Optional, Tuple
+from urllib.parse import urljoin
+
 import ipykernel
 import requests
-from urllib.parse import urljoin
 from notebook.notebookapp import list_running_servers
-from typing import List, Dict, Optional, Any, Callable
-import inspect
 
 
-def get_notebook_name():
+def get_notebook_path() -> Optional[str]:
     """
     Return the full path of the jupyter notebook.
-    
+
     From https://github.com/jupyter/notebook/issues/1000#issuecomment-359875246.
+    :returns: the full path to the notebook or None if the path couldn't be found
+      (the latter shouldn't happen)
     """
     kernel_id = re.search(
         "kernel-(.*).json", ipykernel.connect.get_connection_file()
@@ -29,20 +32,21 @@ def get_notebook_name():
                 return os.path.join(server["notebook_dir"], relative_path)
 
 
-def get_nb_imports(nb_name: str) -> dict:
+def get_nb_imports(nb_path: str) -> Dict[Tuple[str, ...], str]:
     """
     Find all lines in a Jupyter notebook which are imports.
 
-    Return a dictionary like
-    {('pd',): 'import pandas as pd',
-     ('roc_auc_score', 'roc_curve'): 'from sklearn.metrics import roc_auc_score, roc_curve'}
-
-    Assumes each import statement is one line, which doesn't actually have to be the case.
-    This will also get confused if you have, e.g., strings that look like imports
-    (s = "import pandas as pd"); you'll get some error then.
+    WARNING - only finds single-line imports.
+    This will also get confused if you have strings that look like imports
+    (e.g. `s = "import pandas as pd"`).
+    :returns: a dictionary like
+     {
+         ("pd",): "import pandas as pd",
+         ("roc_auc_score", "roc_curve"): "from sklearn.metrics import roc_auc_score, roc_curve",
+     }
     """
 
-    with open(nb_name) as f:
+    with open(nb_path) as f:
         cells = json.loads(f.read())["cells"]
 
     import_lines = []
@@ -96,7 +100,7 @@ def write_funcs_to_file(
 
     imports_needed = set()
     source = []
-    imports = get_nb_imports(get_notebook_name())
+    imports = get_nb_imports(get_notebook_path())
 
     for func in funcs:
         source_lines = inspect.getsourcelines(func)[0]

@@ -1,6 +1,6 @@
+from pathlib import Path
+
 import setuptools
-import os
-import shutil
 
 with open("README.md", "r") as f:
     long_description = f.read()
@@ -22,15 +22,17 @@ setuptools.setup(
     ],
 )
 
-install_dir = os.path.join("~", ".ipython", "profile_default", "startup")
-install_dir = os.path.expanduser(install_dir)
-install_path = os.path.join(install_dir, "ipy_cell_completion_bell.py")
+install_dir = Path.home() / ".ipython" / "profile_default" / "startup"
+source_dir = Path(__file__).resolve().parent / "jupyter_utils"
 
-current_dir = os.path.realpath(os.path.dirname(__file__))
-source_path = os.path.join(current_dir, "jupyter_utils", "ipy_cell_completion_bell.py")
-
-try:
-    shutil.copy(source_path, install_path)
-except (FileNotFoundError, PermissionError, shutil.SameFileError):
-    print(f"Unable to install %notify magic to {install_dir}.")
-    print(f"Copy {source_path} to your startup folder manually.")
+for fname in ["ipy_cell_completion_bell.py", "bell.wav", "background.py"]:
+    install = input(f"Do you want to copy the file at {fname} to your IPython startup directory? (y/n)")
+    if install.lower() not in ("y", "yes"):
+        continue
+    source_path = source_dir / fname
+    install_path = install_dir / fname
+    if install_path.exists():
+        overwrite = input(f"There is already a file at {install_path}; should it be overwritten? (y/n) ")
+        if overwrite.lower() not in ("y", "yes"):
+            continue
+    install_path.write_text(source_path.read_text())

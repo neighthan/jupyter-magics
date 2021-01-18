@@ -5,19 +5,26 @@ Put this file in, e.g., ~/.ipython/profile_default/startup to load this magic on
 """
 
 import json
-from tempfile import NamedTemporaryFile
-from subprocess import Popen
 from os.path import dirname
-from IPython.core.magic import register_cell_magic
-from IPython import get_ipython
-from typing import Optional
+from subprocess import Popen
+from tempfile import NamedTemporaryFile
 from time import sleep
-from jupyter_utils import get_notebook_name
+
+from IPython.core.magic import register_cell_magic
+
+from .jupyter_utils import get_notebook_path
 
 
 @register_cell_magic
 def background(line: str, cell: str):
-    nb_fname = get_notebook_name()
+    """
+    Any cells with cell magics will be skipped (in case it's something like %%bash) as
+    will any lines with line magics. The exception is that the rest of the code in the
+    cell that's running this magic will be included.
+    """
+    nb_fname = get_notebook_path()
+    if nb_fname is None:
+        raise RuntimeError("Unable to find path to current notebook.")
 
     with open(nb_fname) as f:
         nb = json.load(f)
