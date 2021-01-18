@@ -13,6 +13,6 @@ A few functions / magics for working with Jupyter notebooks.
 pip install git+https://github.com/neighthan/jupyter-utils
 ```
 
-Not to be confused with `[jupyter_utils]`.
+Not to be confused with [`jupyter_utils`].
 
-[jupyter_utils]: https://github.com/gsemet/jupyter_utils
+[`jupyter_utils`]: https://github.com/gsemet/jupyter_utils
