@@ -28,4 +28,7 @@ source_dir = Path(__file__).resolve().parent / "jupyter_utils"
 for fname in ["ipy_cell_completion_bell.py", "bell.wav", "background.py", "visualize.py"]:
     source_path = source_dir / fname
     install_path = install_dir / fname
-    install_path.write_text(source_path.read_text())
+    if fname.endswith(".py"):
+        install_path.write_text(source_path.read_text())
+    else:
+        install_path.write_bytes(source_path.read_bytes())
