@@ -26,13 +26,6 @@ install_dir = Path.home() / ".ipython" / "profile_default" / "startup"
 source_dir = Path(__file__).resolve().parent / "jupyter_utils"
 
 for fname in ["ipy_cell_completion_bell.py", "bell.wav", "background.py", "visualize.py"]:
-    install = input(f"Do you want to copy the file at {fname} to your IPython startup directory? (y/n)")
-    if install.lower() not in ("y", "yes"):
-        continue
     source_path = source_dir / fname
     install_path = install_dir / fname
-    if install_path.exists():
-        overwrite = input(f"There is already a file at {install_path}; should it be overwritten? (y/n) ")
-        if overwrite.lower() not in ("y", "yes"):
-            continue
     install_path.write_text(source_path.read_text())
