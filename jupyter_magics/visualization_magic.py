@@ -67,6 +67,7 @@ def normalize_img(img) -> np.ndarray:
     return img
 
 
+@magics_class
 class MplAnimation(Magics):
     magic_name = "anim"
     rec_name = "_recorder"
