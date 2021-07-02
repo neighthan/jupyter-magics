@@ -1,20 +1,115 @@
+from __future__ import annotations
+
 import gzip
 import time
 from functools import partial
 from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Union
 
-import holoviews as hv
 import numpy as np
-import PIL
-import torch
 from IPython import display, get_ipython
 from IPython.core.magic import (
     Magics,
+    cell_magic,
     line_magic,
     magics_class,
     needs_local_scope,
     no_var_expand,
 )
+
+try:
+    import holoviews as hv
+    hv_imported = True
+except ImportError:
+    hv_imported = False
+try:
+    import matplotlib as mpl
+    from matplotlib import pyplot as plt
+    mpl_imported = True
+except ImportError:
+    mpl_imported = False
+
+
+def check_type(o: Any, target_type: str) -> bool:
+    """
+    Check if `o`'s class path + name matches `target_type`.
+
+    E.g. `check_type(o, "numpy.ndarray")`
+
+    Checking types using this method instead of `isinstance` with the actual type is
+    preferred here so that we don't have to import pytorch, PIL, and numpy (and complicate
+    the code by handling import errors if any of these are missing, importing comet-ml
+    before pytorch, etc.).
+    """
+    return str(type(o)) == f"<class '{target_type}'>"
+
+
+def is_chw(img: np.ndarray) -> bool:
+    return img.ndim == 3 and img.shape[0] == 3 and img.shape[2] != 3
+
+
+def normalize_img(img) -> np.ndarray:
+    """Converts `img` to a HWC or HW numpy array."""
+    if check_type(img, "torch.Tensor"):
+        img = img.detach().cpu().numpy()
+    elif check_type(img, "PIL.Image.Image"):
+        img = np.array(img)
+    if not check_type(img, "numpy.ndarray"):
+        raise ValueError(f"Don't know how to handle image with {type(img)=}.")
+    if img.ndim == 4 and img.shape[0] == 1:
+        # remove batch dimension
+        img = img.squeeze(0)
+    if is_chw(img):
+        img = img.transpose(1, 2, 0)
+    if img.ndim not in (2, 3):
+        raise ValueError(
+            f"Don't know how to handle image with {img.ndim=}; expected ndim = 2 or 3."
+        )
+    return img
+
+
+class MplAnimation(Magics):
+    magic_name = "anim"
+    rec_name = "_recorder"
+
+    @cell_magic
+    @no_var_expand
+    def anim(self, line: str, cell: str) -> None:
+        lines = [f"{self.rec_name} = Recorder({line})"]
+        for line in cell.split("\n"):
+            if line.strip().startswith(f"%{self.magic_name} "):
+                line = line.replace(f"%{self.magic_name} ", f"{self.rec_name}.add_frame(") + ")"
+            lines.append(line)
+        cell = "\n".join(lines)
+        self.shell.ex(cell)
+        recorder = self.shell.user_ns.pop(self.rec_name)
+        return recorder.to_video()
+
+
+class Recorder:
+    def __init__(self, repeat: bool = True, fps: int=30):
+        self.frames = []
+        self.repeat = repeat
+        self.delay = 1000 // fps
+
+    def add_frame(self, frame):
+        self.frames.append(normalize_img(frame))
+
+    def to_video(self):
+        if not self.frames:
+            return
+        fig = plt.figure()
+        plt.axis("off")
+        im = plt.imshow(self.frames[0])
+        plt.close()
+
+        def animate(frame):
+            im.set_data(frame)
+            return im
+
+        anim = mpl.animation.FuncAnimation(
+            fig, animate, frames=self.frames, interval=self.delay, repeat=self.repeat
+        )
+        return display.HTML(anim.to_html5_video())
 
 
 @magics_class
@@ -39,16 +134,7 @@ class Vis(Magics):
             self.vis = None
 
         self.shell.ex(f"_ = {line}")
-        img = local_ns["_"]
-        if isinstance(img, torch.Tensor):
-            img = img.detach().cpu().numpy()
-        elif isinstance(img, PIL.Image.Image):
-            img = np.array(img)
-        if not isinstance(img, np.ndarray):
-            raise ValueError(f"Don't know how to handle image of type {type(img)}.")
-        img = img.squeeze()
-        if self.is_chw(img):
-            img = img.transpose(1, 2, 0)
+        img = normalize_img(local_ns["_"])
         if self.vis is None:
             # border=0 removes the right border, but the top one is still there...
             opts = dict(xaxis=None, yaxis=None, toolbar=None, border=0)
@@ -61,12 +147,15 @@ class Vis(Magics):
             self.vis = Visualizer(opts=opts)
         self.vis(img)
 
-    @staticmethod
-    def is_chw(img: np.ndarray) -> bool:
-        return img.ndim == 3 and img.shape[0] == 3 and img.shape[2] != 3
+if hv_imported:
+    get_ipython().register_magics(Vis)
+else:
+    print("Can't register %img magic because holoviews is missing.")
 
-
-get_ipython().register_magics(Vis)
+if mpl_imported:
+    get_ipython().register_magics(MplAnimation)
+else:
+    print("Can't register %anim magic because matplotlib is missing.")
 
 
 #
