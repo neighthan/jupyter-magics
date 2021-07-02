@@ -1,6 +1,6 @@
-# Jupyter Utils
+# Jupyter Magics
 
-A few functions / magics for working with Jupyter notebooks.
+A few magics for Jupyter notebooks.
 
 ## Usage
 
@@ -10,9 +10,5 @@ A few functions / magics for working with Jupyter notebooks.
 ## Installation
 
 ```bash
-pip install git+https://github.com/neighthan/jupyter-utils
+pip install git+https://github.com/neighthan/jupyter-magics
 ```
-
-Not to be confused with [`jupyter_utils`].
-
-[`jupyter_utils`]: https://github.com/gsemet/jupyter_utils
